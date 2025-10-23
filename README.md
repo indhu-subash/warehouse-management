@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Warehouse Management System
 
 A complete desktop application built in Java using Swing for the GUI and MySQL for data persistence. The system follows MVC architecture and provides functionality for managing inventory items and suppliers.
@@ -196,3 +197,6 @@ This project is created for educational purposes. Feel free to use and modify as
 ## Support
 
 For issues or questions, please check the troubleshooting section above or review the code comments for implementation details.
+=======
+# warehouse-management
+>>>>>>> 893f8fdb91ee7355bac12ff348bc5bd67118f4ef
