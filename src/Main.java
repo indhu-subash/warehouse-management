@@ -2,7 +2,6 @@ import java.sql.*;
 import gui.LoginFrame;
 import database.DBConnection;
 import javax.swing.*;
-import javax.swing.UIManager;
 
 /**
  * Main entry point for the Warehouse Management System
@@ -50,3 +49,4 @@ public class Main {
         });
     }
 }
+
