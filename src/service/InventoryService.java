@@ -18,7 +18,7 @@ public class InventoryService {
      * @return true if successful, false otherwise
      */
     public boolean addItem(Item item) {
-        String sql = "INSERT INTO items (name, quantity, location) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO items (name, quantity, location, category, description, min_stock_level, price, supplier_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -26,6 +26,11 @@ public class InventoryService {
             pstmt.setString(1, item.getName());
             pstmt.setInt(2, item.getQuantity());
             pstmt.setString(3, item.getLocation());
+            pstmt.setString(4, item.getCategory());
+            pstmt.setString(5, item.getDescription());
+            pstmt.setInt(6, item.getMinStockLevel());
+            pstmt.setDouble(7, item.getPrice());
+            pstmt.setInt(8, item.getSupplierId());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -42,7 +47,7 @@ public class InventoryService {
      * @return true if successful, false otherwise
      */
     public boolean updateItem(Item item) {
-        String sql = "UPDATE items SET name = ?, quantity = ?, location = ? WHERE id = ?";
+        String sql = "UPDATE items SET name = ?, quantity = ?, location = ?, category = ?, description = ?, min_stock_level = ?, price = ?, supplier_id = ? WHERE id = ?";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -50,7 +55,12 @@ public class InventoryService {
             pstmt.setString(1, item.getName());
             pstmt.setInt(2, item.getQuantity());
             pstmt.setString(3, item.getLocation());
-            pstmt.setInt(4, item.getId());
+            pstmt.setString(4, item.getCategory());
+            pstmt.setString(5, item.getDescription());
+            pstmt.setInt(6, item.getMinStockLevel());
+            pstmt.setDouble(7, item.getPrice());
+            pstmt.setInt(8, item.getSupplierId());
+            pstmt.setInt(9, item.getId());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -100,8 +110,15 @@ public class InventoryService {
                     rs.getInt("id"),
                     rs.getString("name"),
                     rs.getInt("quantity"),
-                    rs.getString("location")
+                    rs.getString("location"),
+                    rs.getString("category"),
+                    rs.getString("description"),
+                    rs.getInt("min_stock_level"),
+                    rs.getDouble("price"),
+                    rs.getInt("supplier_id")
                 );
+                item.setCreatedDate(rs.getString("created_date"));
+                item.setUpdatedDate(rs.getString("updated_date"));
                 items.add(item);
             }
             
@@ -127,12 +144,20 @@ public class InventoryService {
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Item(
+                    Item item = new Item(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getInt("quantity"),
-                        rs.getString("location")
+                        rs.getString("location"),
+                        rs.getString("category"),
+                        rs.getString("description"),
+                        rs.getInt("min_stock_level"),
+                        rs.getDouble("price"),
+                        rs.getInt("supplier_id")
                     );
+                    item.setCreatedDate(rs.getString("created_date"));
+                    item.setUpdatedDate(rs.getString("updated_date"));
+                    return item;
                 }
             }
             
@@ -142,4 +167,144 @@ public class InventoryService {
         
         return null;
     }
+    
+    /**
+     * Search items by name
+     * @param searchTerm Search term for item name
+     * @return List of matching items
+     */
+    public List<Item> searchItemsByName(String searchTerm) {
+        List<Item> items = new ArrayList<>();
+        String sql = "SELECT * FROM items WHERE name LIKE ? ORDER BY name";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, "%" + searchTerm + "%");
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Item item = new Item(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getInt("quantity"),
+                        rs.getString("location"),
+                        rs.getString("category"),
+                        rs.getString("description"),
+                        rs.getInt("min_stock_level"),
+                        rs.getDouble("price"),
+                        rs.getInt("supplier_id")
+                    );
+                    item.setCreatedDate(rs.getString("created_date"));
+                    item.setUpdatedDate(rs.getString("updated_date"));
+                    items.add(item);
+                }
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error searching items: " + e.getMessage());
+        }
+        
+        return items;
+    }
+    
+    /**
+     * Get items by category
+     * @param category Category name
+     * @return List of items in the category
+     */
+    public List<Item> getItemsByCategory(String category) {
+        List<Item> items = new ArrayList<>();
+        String sql = "SELECT * FROM items WHERE category = ? ORDER BY name";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, category);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Item item = new Item(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getInt("quantity"),
+                        rs.getString("location"),
+                        rs.getString("category"),
+                        rs.getString("description"),
+                        rs.getInt("min_stock_level"),
+                        rs.getDouble("price"),
+                        rs.getInt("supplier_id")
+                    );
+                    item.setCreatedDate(rs.getString("created_date"));
+                    item.setUpdatedDate(rs.getString("updated_date"));
+                    items.add(item);
+                }
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error getting items by category: " + e.getMessage());
+        }
+        
+        return items;
+    }
+    
+    /**
+     * Get items with low stock (quantity <= min_stock_level)
+     * @return List of items with low stock
+     */
+    public List<Item> getLowStockItems() {
+        List<Item> items = new ArrayList<>();
+        String sql = "SELECT * FROM items WHERE quantity <= min_stock_level ORDER BY quantity ASC";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                Item item = new Item(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    rs.getInt("quantity"),
+                    rs.getString("location"),
+                    rs.getString("category"),
+                    rs.getString("description"),
+                    rs.getInt("min_stock_level"),
+                    rs.getDouble("price"),
+                    rs.getInt("supplier_id")
+                );
+                item.setCreatedDate(rs.getString("created_date"));
+                item.setUpdatedDate(rs.getString("updated_date"));
+                items.add(item);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error retrieving low stock items: " + e.getMessage());
+        }
+        
+        return items;
+    }
+    
+    /**
+     * Get all available categories
+     * @return List of category names
+     */
+    public List<String> getAllCategories() {
+        List<String> categories = new ArrayList<>();
+        String sql = "SELECT DISTINCT category FROM items WHERE category IS NOT NULL ORDER BY category";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                categories.add(rs.getString("category"));
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error retrieving categories: " + e.getMessage());
+        }
+        
+        return categories;
+    }
 }
+
