@@ -44,4 +44,13 @@ public class DBConnection {
             return false;
         }
     }
+        public static void main(String[] args) {
+        if (testConnection()) {
+            System.out.println("✅ Database connection successful!");
+        } else {
+            System.out.println("❌ Failed to connect to the database.");
+        }
+    }
+
 }
+
