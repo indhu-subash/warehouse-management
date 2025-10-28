@@ -54,7 +54,7 @@ This project uses **Java Swing** for the GUI and **MySQL** as the backend databa
 - **Frontend:** Java Swing  
 - **Backend:** MySQL  
 - **Database Connector:** JDBC  
-- **IDE Used:** NetBeans / IntelliJ / Eclipse  
+- **IDE Used:** Eclipse  
 
 ---
 
